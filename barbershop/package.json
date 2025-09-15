@@ -1,0 +1,46 @@
+{
+  "name": "barbershop",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build --turbopack",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@auth/pg-adapter": "^1.10.0",
+    "@emotion/cache": "^11.14.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@fontsource/roboto": "^5.2.6",
+    "@mui/icons-material": "^7.3.1",
+    "@mui/material": "^7.3.1",
+    "@mui/material-nextjs": "^7.3.0",
+    "@mui/x-charts": "^8.11.2",
+    "@mui/x-date-pickers": "^8.11.1",
+    "@toolpad/core": "^0.16.0",
+    "@vis.gl/react-google-maps": "^1.5.5",
+    "browser-image-compression": "^2.0.2",
+    "dayjs": "^1.11.18",
+    "next": "15.5.2",
+    "next-auth": "^5.0.0-beta.29",
+    "notistack": "^3.0.2",
+    "pg": "^8.16.3",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-imask": "^7.6.1",
+    "react-transition-group": "^4.4.5",
+    "sharp": "^0.34.3",
+    "undici": "^7.15.0",
+    "zod": "^4.1.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20.19.13",
+    "@types/pg": "^8.15.5",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
