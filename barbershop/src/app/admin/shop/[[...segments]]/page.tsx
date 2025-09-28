@@ -14,15 +14,15 @@ export default function ShopPage() {
   const [shopId] = params.segments ?? [];
 
   return (
-    <Crud<Shop>
-      dataSource={shopDataSource}
-      dataSourceCache={shopCache}
-      rootPath={`/admin/shop`}
-      pageTitles={{
-        show: `Shop ${shopId}`,
-        create: 'Create Shop',
-        edit: `Edit Shop ${shopId}`,
-      }}
-    />
-    )
+      <Crud<Shop>
+        dataSource={shopDataSource}
+        dataSourceCache={shopCache}
+        rootPath={`/admin/shop`}
+        pageTitles={{
+          show: `Shop ${shopId}`,
+          create: 'Create Shop',
+          edit: `Edit Shop ${shopId}`,
+        }}
+      />
+  );
 }

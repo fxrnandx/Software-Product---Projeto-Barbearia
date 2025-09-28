@@ -8,7 +8,7 @@ import BasicTabs from "@/components/PageTabs";
 import ServiceTab from "@/components/ServiceTab";
 import { ScheduleProvider } from "@/providers/ScheduleProvider";
 import WorkersTabs from "@/components/WorkersTabs";
-import { getFullShopById } from "@/utils/shops";
+import { daysOfWeek, getFullShopById } from "@/utils/shops";
 import { getShopRatings, getShopRatingsCount } from "@/utils/ratings";
 import RatingTab from "@/components/RatingTab";
 
@@ -101,20 +101,28 @@ export default async function Page({ params }: PageProps) {
             >
               Horário de Funcionamento:
             </Typography>
-            {barberShop.shop.workingDays.map((dayInfo) => (
-              <Grid container key={dayInfo} padding={1} spacing={2}>
-                <Grid size={8}>
-                  <Typography variant="body2" color="text.primary">
-                    {dayInfo}:
-                  </Typography>
-                </Grid>
-                <Grid size={4}>
-                  <Typography variant="body2" color="text.primary">
-                    {`${barberShop.shop.openAt}`.substring(0, 5)} - {`${barberShop.shop.closeAt}`.substring(0, 5)}
-                  </Typography>
-                </Grid>
-              </Grid>
-            ))}
+            {
+              daysOfWeek.map((day) => {
+                const workingDay = barberShop.shop.workingDays.find(d => d === day.value);
+                if (!workingDay) {
+                  return;
+                };
+                return (     
+                  <Grid container key={day.value} padding={1} spacing={2}>
+                    <Grid size={8}>
+                      <Typography variant="body2" color="text.primary">
+                        {day.label}:
+                      </Typography>
+                    </Grid>
+                    <Grid size={4}>
+                      <Typography variant="body2" color="text.primary">
+                        {`${barberShop.shop.openAt}`.substring(0, 5)} - {`${barberShop.shop.closeAt}`.substring(0, 5)}
+                      </Typography>
+                    </Grid>
+                  </Grid>
+                );
+              })
+            }
           </Item>
         </Grid>
       </Grid>

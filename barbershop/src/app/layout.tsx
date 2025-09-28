@@ -15,6 +15,7 @@ import AddCircleIcon from '@mui/icons-material/AddCircle';
 import PersonIcon from '@mui/icons-material/Person';
 import HomeRepairServiceIcon from '@mui/icons-material/HomeRepairService';
 import BarChartIcon from '@mui/icons-material/BarChart';
+import { LocationProvider } from "@/providers/Locationprovider";
 
 const roboto = Roboto({
   weight: ["300", "400", "500", "700"],
@@ -85,16 +86,18 @@ export default async function RootLayout({
     >
       <body>
         <SessionProvider session={session}>
-        <AppRouterCacheProvider options={{ enableCssLayer: true }}>
-          <React.Suspense fallback={<LinearProgress />}>
-            <CssBaseline enableColorScheme />
-              <NextAppProvider branding={BRANDING} session={session} navigation={NAVIGATION} authentication={AUTHENTICATION}>
-                  <Header hideNavigation>
-                    {children}
-                  </Header>
-              </NextAppProvider>
-          </React.Suspense>
-        </AppRouterCacheProvider>
+          <LocationProvider>
+          <AppRouterCacheProvider options={{ enableCssLayer: true }}>
+            <React.Suspense fallback={<LinearProgress />}>
+              <CssBaseline enableColorScheme />
+                <NextAppProvider branding={BRANDING} session={session} navigation={NAVIGATION} authentication={AUTHENTICATION}>
+                    <Header hideNavigation>
+                      {children}
+                    </Header>
+                </NextAppProvider>
+            </React.Suspense>
+          </AppRouterCacheProvider>
+        </LocationProvider>
         </SessionProvider>
       </body>
     </html>

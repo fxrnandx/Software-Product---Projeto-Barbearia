@@ -1,8 +1,9 @@
-import { DataModel } from "@toolpad/core";
 import { del, get, post, put } from "./BarberShopApi";
 import { Service } from "./services";
 import { Employee } from "./employees";
-import { Dayjs } from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
+import { setLocation } from "@/providers/Locationprovider";
+import { getCoordinatesByLocation } from "./location";
 
 export interface DaysOfWeek {
   value: string;
@@ -34,6 +35,9 @@ export type Shop = {
   closeAt: Dayjs;
   workingDays: string[];
   rating?: number;
+  state: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export type ShopView = {
@@ -56,7 +60,12 @@ export async function getShopById(id: string): Promise<Shop> {
   if (statusCode !== 200) {
     throw new Error(`Failed to fetch shop: ${body}`);
   }
-  return body;
+  const shop = { ...body,
+    openAt: dayjs(body.openAt as unknown as string, 'HH:mm'),
+    closeAt: dayjs(body.closeAt as unknown as string, 'HH:mm')
+   };
+   setLocation({ latitude: shop.latitude, longitude: shop.longitude, state: shop.state, city: shop.city });
+  return shop as Shop;
 }
 
 export async function getOwnerShops(limit: number, offset: number): Promise<Shop[]> {
@@ -72,13 +81,22 @@ export async function getOwnerShops(limit: number, offset: number): Promise<Shop
 
 export async function updateShop(id: string, data: Partial<Shop>): Promise<Shop> {
   const shop = { ...data,
-    openAt: (data.openAt as Dayjs).format('HH:mm'),
-    closeAt: (data.closeAt as Dayjs).format('HH:mm')
+    openAt: (data.openAt as Dayjs)?.format('HH:mm'),
+    closeAt: (data.closeAt as Dayjs)?.format('HH:mm')
    };
   if (shop.logo?.startsWith("data:image/")) {
     shop.logo = (shop.logo as string).replace('data:', '').replace(/^.+,/, '');
   } else {
     delete shop.logo;
+  }
+  if( (!shop.latitude || !shop.longitude) || (shop.latitude === 0 && shop.longitude === 0) ) {
+    const coordinates = await getCoordinatesByLocation({ address: `${shop.street}, ${shop.number}, ${shop.city} - ${shop.state}, ${shop.zipCode}` });
+    if( coordinates.results?.length > 0 ) {
+      const location = coordinates.results[0].geometry.location;
+      shop.latitude = location.lat;
+      shop.longitude = location.lng;
+      setLocation({ latitude: shop.latitude, longitude: shop.longitude, state: shop.state, city: shop.city });
+    }
   }
   const { statusCode, body } = await put({ path: `/Shops/${id}`, body: shop, headers: { "Content-Type": "application/json" } });
   if (statusCode !== 200) {
@@ -97,12 +115,22 @@ export async function countOwnerShops(): Promise<number> {
 
 export async function createShop(data: Omit<Shop, 'id'>): Promise<Shop> {
   const shop = { ...data,
-    openAt: (data.openAt as Dayjs).format('HH:mm'),
-    closeAt: (data.closeAt as Dayjs).format('HH:mm')
+    openAt: (data.openAt as Dayjs)?.format('HH:mm'),
+    closeAt: (data.closeAt as Dayjs)?.format('HH:mm')
    };
+  if( !shop.latitude || !shop.longitude ) {
+    const coordinates = await getCoordinatesByLocation({ address: `${shop.street}, ${shop.number}, ${shop.city} - ${shop.state}, ${shop.zipCode}` });
+    if( coordinates.results?.length > 0 ) {
+      const location = coordinates.results[0].geometry.location;
+      shop.latitude = location.lat;
+      shop.longitude = location.lng;
+      setLocation({ latitude: shop.latitude, longitude: shop.longitude, state: shop.state, city: shop.city });
+    }
+  }
   shop.logo = (shop.logo as string)?.replace('data:', '').replace(/^.+,/, '');
   const { statusCode, body } = await post({ path: `/Shops`, body: shop, headers: { "Content-Type": "application/json" } });
   if (statusCode >= 400) {
+    console.error(body);
     throw new Error(`Failed to create shop: ${statusCode}`);
   }
   return body as Shop;
@@ -117,6 +145,14 @@ export async function deleteShop(id: string): Promise<void> {
 
 export async function getShops(): Promise<Shop[]> {
   const { statusCode, body } = await get<Shop[]>({ path: `/Shops` });
+  if (statusCode !== 200) {
+    throw new Error(`Failed to fetch shops: ${body}`);
+  }
+  return body;
+}
+
+export async function getNearbyShops(latitude: number, longitude: number): Promise<Shop[]> {
+  const { statusCode, body } = await get<Shop[]>({ path: `/Shops/nearby`, query: { latitude: latitude.toString(), longitude: longitude.toString(), radius: "50" } });
   if (statusCode !== 200) {
     throw new Error(`Failed to fetch shops: ${body}`);
   }

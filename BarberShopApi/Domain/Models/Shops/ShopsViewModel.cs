@@ -4,6 +4,10 @@ namespace BarberShopApi.Domain.Models.Shops
   {
     public int? Id { get; set; }
     public required string Name { get; set; }
+    public required decimal Latitude { get; set; }
+    public required decimal Longitude { get; set; }
+    public decimal? Distance { get; set; }
+    public string? State { get; set; }
     public string? ZipCode { get; set; }
     public string? City { get; set; }
     public string? Street { get; set; }

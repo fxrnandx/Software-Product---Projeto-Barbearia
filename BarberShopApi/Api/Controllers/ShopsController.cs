@@ -240,5 +240,14 @@ namespace Api.BarberShopApi.Controllers
       }
       return Ok(createdRating);
     }
+
+    [HttpGet]
+    [Route("nearby")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetNearbyShops([FromQuery] decimal latitude, [FromQuery] decimal longitude, [FromQuery] decimal radius)
+    {
+      var shops = await _shopsRepository.GetNearbyShops(latitude, longitude, radius);
+      return Ok(shops);
+    }
   }
 }

@@ -14,8 +14,10 @@ import { Avatar, Typography } from "@mui/material";
 import { DataSource, DataSourceCache } from "@toolpad/core";
 import CnpjInput from "@/components/CnpjInput";
 import HoursTimePicker from "@/components/TimePicker";
-import { Dayjs } from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import WorkingDaysSelect from "@/components/FormMultiSelect";
+import ZipCodeInput from "@/components/ZipCodeInput";
+import { getLocation } from "@/providers/Locationprovider";
 
 export const shopDataSource: DataSource<Shop> = {
   fields: [
@@ -48,18 +50,14 @@ export const shopDataSource: DataSource<Shop> = {
       filterable: false,
     },
     {
-      field: "city",
-      headerName: "City",
-      sortable: false,
-      hideSortIcons: true,
-      filterable: false,
-    },
-    {
       field: "zipCode",
       headerName: "ZIP Code",
       sortable: false,
       hideSortIcons: true,
       filterable: false,
+      renderFormField: ({ value, onChange, error }) => (
+        <ZipCodeInput value={value as string} onChange={onChange} error={error} />
+      ),
     },
     {
       field: "cnpj",
@@ -174,9 +172,11 @@ export const shopDataSource: DataSource<Shop> = {
     return shop;
   },
   createOne: async (shop) => {
+    shop = {...shop, ...getLocation()}
     return await createShop(shop as Omit<Shop, 'id'>);
   },
   updateOne: async (id, data) => {
+    data = { ...data, ...getLocation() };
     return await updateShop(id as string, data);
   },
   deleteOne: async (id) => {
@@ -192,6 +192,13 @@ export const shopDataSource: DataSource<Shop> = {
       .refine((value) => validarCnpj(value), {
         message: "CNPJ is invalid",
       }),
+    openAt: z.instanceof(dayjs as unknown as typeof Dayjs, { error: "Open At is required" }),
+    closeAt: z.instanceof(dayjs as unknown as typeof Dayjs, {
+      error: "Close At is required",}),
+    zipCode: z
+      .string({ error: "ZIP Code is required" })
+      .nonempty("ZIP Code is required"),
+    workingDays: z.array(z.string()).min(1, "Select at least one working day"),
   })["~standard"].validate,
 };
 

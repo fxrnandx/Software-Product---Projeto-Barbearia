@@ -18,7 +18,6 @@ export default function HoursTimePicker({
   const handleChange = (newValue: Dayjs | null) => {
     onChange(newValue);
   };
-
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <FormControl error={!!error} fullWidth>

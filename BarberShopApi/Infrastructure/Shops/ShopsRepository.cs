@@ -26,7 +26,9 @@ namespace BarberShopApi.Infrastructure.Shops
                                               phone,
                                               workingdays,
                                               openat,
-                                              closeat) 
+                                              closeat,
+                                              state,
+                                              location) 
                                       VALUES (@Name, 
                                               @ZipCode, 
                                               @City, 
@@ -39,7 +41,9 @@ namespace BarberShopApi.Infrastructure.Shops
                                               @Phone, 
                                               @WorkingDays, 
                                               @OpenAt::time, 
-                                              @CloseAt::time) 
+                                              @CloseAt::time,
+                                              @State,
+                                              ST_SetSRID(ST_MakePoint(@Longitude, @Latitude), 4326))
                                     RETURNING id, 
                                               name, 
                                               zip_code, 
@@ -52,7 +56,10 @@ namespace BarberShopApi.Infrastructure.Shops
                                               phone,
                                               workingdays,
                                               openat::text AS openat,
-                                              closeat::text AS closeat;";
+                                              closeat::text AS closeat,
+                                              state,
+                                              ST_X(location::geometry) AS longitude,
+                                              ST_Y(location::geometry) AS latitude;";
       var result = await conn.QuerySingleAsync<ShopViewModel>(sql, param: new
       {
         shop.Name,
@@ -67,7 +74,10 @@ namespace BarberShopApi.Infrastructure.Shops
         shop.Phone,
         shop.WorkingDays,
         shop.OpenAt,
-        shop.CloseAt
+        shop.CloseAt,
+        shop.State,
+        shop.Longitude,
+        shop.Latitude
       });
       return result;
     }
@@ -89,7 +99,10 @@ namespace BarberShopApi.Infrastructure.Shops
                                   openat::text AS openat,
                                   closeat::text AS closeat,
                                   workingdays,
-                                  (SELECT AVG(value) FROM ratings WHERE shopid = shops.id) AS rating
+                                  (SELECT AVG(value) FROM ratings WHERE shopid = shops.id) AS rating,
+                                  state,
+                                  ST_X(location::geometry) AS longitude,
+                                  ST_Y(location::geometry) AS latitude
                              FROM shops 
                             WHERE id = @Id;";
       var result = await conn.QuerySingleOrDefaultAsync<ShopViewModel>(sql, param: new { Id = id });
@@ -112,7 +125,9 @@ namespace BarberShopApi.Infrastructure.Shops
                                   cnpj,
                                   openat::text AS openat,
                                   closeat::text AS closeat,
-                                  workingdays 
+                                  workingdays,
+                                  (SELECT AVG(value) FROM ratings WHERE shopid = shops.id) AS rating,
+                                  state
                                   FROM shops 
                          ORDER BY id 
                             LIMIT @Limit 
@@ -164,7 +179,9 @@ namespace BarberShopApi.Infrastructure.Shops
                                   phone = @Phone,
                                   workingdays = @WorkingDays,
                                   openat = @OpenAt::time,
-                                  closeat = @CloseAt::time
+                                  closeat = @CloseAt::time,
+                                  state = @State,
+                                  location = ST_SetSRID(ST_MakePoint(@Longitude, @Latitude), 4326)
                             WHERE id = @ShopId 
                         RETURNING id, 
                                   name, 
@@ -178,7 +195,10 @@ namespace BarberShopApi.Infrastructure.Shops
                                   cnpj,
                                   openat::text AS openat,
                                   closeat::text AS closeat,
-                                  workingdays;";
+                                  workingdays,
+                                  state,
+                                  ST_X(location::geometry) AS longitude,
+                                  ST_Y(location::geometry) AS latitude;";
       var result = await conn.QuerySingleAsync<ShopViewModel>(sql, param: new
       {
         shop.Name,
@@ -193,7 +213,10 @@ namespace BarberShopApi.Infrastructure.Shops
         ShopId = shopId,
         shop.WorkingDays,
         shop.OpenAt,
-        shop.CloseAt
+        shop.CloseAt,
+        shop.State,
+        shop.Longitude,
+        shop.Latitude
       });
       return result;
     }
@@ -292,6 +315,33 @@ namespace BarberShopApi.Infrastructure.Shops
       const string sql = @"SELECT COUNT(*) FROM ratings WHERE shopid = @ShopId;";
       var count = await conn.ExecuteScalarAsync<int>(sql, param: new { ShopId = shopId });
       return count;
+    }
+
+    public async Task<IEnumerable<ShopViewModel>> GetNearbyShops(decimal latitude, decimal longitude, decimal radius)
+    {
+      using NpgsqlConnection conn = new(_connectionString);
+
+      const string sql = @"SELECT id, 
+                                  name, 
+                                  zip_code AS ZipCode, 
+                                  city, 
+                                  street, 
+                                  number, 
+                                  (SELECT path FROM images WHERE id = logo_id) AS logo,
+                                  email,
+                                  phone,
+                                  cnpj,
+                                  openat::text AS openat,
+                                  closeat::text AS closeat,
+                                  workingdays,
+                                  (SELECT AVG(value) FROM ratings WHERE shopid = shops.id) AS rating,
+                                  state,
+                                  ST_Distance(location, ST_SetSRID(ST_MakePoint(@Longitude, @Latitude), 4326)) / 1000 AS distance
+                             FROM shops
+                            WHERE ST_DWithin(location, ST_SetSRID(ST_MakePoint(@Longitude, @Latitude), 4326), @Radius * 1000)
+                         ORDER BY distance;";
+      var result = await conn.QueryAsync<ShopViewModel>(sql, param: new { Latitude = latitude, Longitude = longitude, Radius = radius });
+      return result;
     }
 
   }
